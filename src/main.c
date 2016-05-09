@@ -513,8 +513,7 @@ void MX_GPIO_Init(void)
 
 
 
-	dupa
-
+	dupa2
 
 //
 //    //current up default
