@@ -513,8 +513,6 @@ void MX_GPIO_Init(void)
 
 
 
-	dupa2
-
 //
 //    //current up default
 //    HAL_GPIO_WritePin(CURRENT_MODE_UP_1_PORT,CURRENT_MODE_UP_1_PIN,GPIO_PIN_RESET);
