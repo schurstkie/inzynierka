@@ -117,7 +117,10 @@ int main(void)
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
 //  	GPIO_PinAFConfig(GPIOA, 0x08, 0x00);
 
+  HAL_ADC_Start(&hadc1);
+
   GLCD_Initialize();
+  GLCD_Delay();
   GLCD_Line(X1,X2,Y1,Y2);
 
   while (1)
@@ -245,6 +248,26 @@ void MX_ADC2_Init(void)
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
+
+  sConfig.Channel = ADC_CHANNEL_7;
+  sConfig.Rank = 1;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset=0;
+  HAL_ADC_ConfigChannel(&hadc2, &sConfig);
+
+
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = 1;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset=0;
+  HAL_ADC_ConfigChannel(&hadc2, &sConfig);
+
+
+
 
 }
 

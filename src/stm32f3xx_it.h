@@ -47,6 +47,8 @@
 
 void NMI_Handler(void);
 void SysTick_Handler(void);
+extern uint32_t value;
+
 
 #ifdef __cplusplus
 }

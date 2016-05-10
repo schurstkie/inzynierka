@@ -36,6 +36,9 @@
 #include "stm32f3xx_it.h"
 #include "gpio_config.h"
 
+uint32_t value=0;
+
+
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
@@ -60,6 +63,7 @@ void NMI_Handler(void)
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
+extern ADC_HandleTypeDef hadc1;
 /**
 * @brief This function handles System tick timer.
 */
@@ -70,6 +74,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
+  value=HAL_ADC_GetValue(&hadc1);
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
 //  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN))
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN);

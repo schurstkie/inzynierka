@@ -287,12 +287,13 @@ unsigned char GLCD_ReadByteFromROMMemory(char * ptr)
 void GLCD_SetCommandToPorts(unsigned char commandToWrite)
 {
 	HAL_GPIO_WritePin(KS0108_D0_PORT,KS0108_D0_PIN,(commandToWrite&0x01));
-	HAL_GPIO_WritePin(KS0108_D1_PORT,KS0108_D1_PIN,(commandToWrite&0x02));
-	HAL_GPIO_WritePin(KS0108_D2_PORT,KS0108_D2_PIN,(commandToWrite&0x04));
-	HAL_GPIO_WritePin(KS0108_D3_PORT,KS0108_D3_PIN,(commandToWrite&0x08));
-	HAL_GPIO_WritePin(KS0108_D4_PORT,KS0108_D4_PIN,(commandToWrite&0x10));
-	HAL_GPIO_WritePin(KS0108_D5_PORT,KS0108_D5_PIN,(commandToWrite&0x20));
-	HAL_GPIO_WritePin(KS0108_D6_PORT,KS0108_D6_PIN,(commandToWrite&0x40));
-	HAL_GPIO_WritePin(KS0108_D7_PORT,KS0108_D7_PIN,(commandToWrite&0x80));
+	HAL_GPIO_WritePin(KS0108_D1_PORT,KS0108_D1_PIN,(commandToWrite&0x02)>>2);
+	HAL_GPIO_WritePin(KS0108_D2_PORT,KS0108_D2_PIN,(commandToWrite&0x04)>>3);
+	HAL_GPIO_WritePin(KS0108_D3_PORT,KS0108_D3_PIN,(commandToWrite&0x08)>>4);
+	HAL_GPIO_WritePin(KS0108_D4_PORT,KS0108_D4_PIN,(commandToWrite&0x10)>>5);
+	HAL_GPIO_WritePin(KS0108_D5_PORT,KS0108_D5_PIN,(commandToWrite&0x20)>>6);
+	HAL_GPIO_WritePin(KS0108_D6_PORT,KS0108_D6_PIN,(commandToWrite&0x40)>>7);
+	HAL_GPIO_WritePin(KS0108_D7_PORT,KS0108_D7_PIN,(commandToWrite&0x80)>>8);
+
 
 }
