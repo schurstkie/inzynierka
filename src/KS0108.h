@@ -19,6 +19,10 @@ void GLCD_WriteCommand(unsigned char, unsigned char);
 void GLCD_ClearScreen(void);
 void GLCD_GoTo(unsigned char, unsigned char);
 void GLCD_WriteString(char *);
+void GLCD_WriteStringNeg(char *);
+void GLCD_WriteChar(char);
+void GLCD_WriteCharNeg(char);
+
 //unsigned char GLCD_ReadByteFromROMMemory(char *);
 //unsigned char GLCD_ReadData(void);
 void GLCD_Bitmap(char *, unsigned char, unsigned char, unsigned char, unsigned char);

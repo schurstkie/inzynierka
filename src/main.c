@@ -128,7 +128,8 @@ int main(void)
 
   GLCD_Initialize();
   GLCD_Delay();
-  GLCD_WriteString("HELLO");
+  GLCD_ClearScreen();
+  GLCD_WriteStringNeg("HELLO");
 
 //  GLCD_Line(X1,X2,Y1,Y2);
 

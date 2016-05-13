@@ -64,6 +64,14 @@ for(i = 0; i < 5; i++)
   GLCD_WriteData(GLCD_ReadByteFromROMMemory((char *)((int)font5x8 + (5 * charToWrite) + i))); 
 GLCD_WriteData(0x00);
 }
+void GLCD_WriteCharNeg(char charToWrite)
+{
+int i;
+charToWrite -= 32;
+for(i = 0; i < 5; i++)
+  GLCD_WriteData(reverse_byte(GLCD_ReadByteFromROMMemory((char *)((int)font5x8 + (5 * charToWrite) + i))));
+GLCD_WriteData(0x00);
+}
 //-------------------------------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------------------------------
@@ -71,6 +79,11 @@ void GLCD_WriteString(char * stringToWrite)
 {
 while(*stringToWrite)
   GLCD_WriteChar(*stringToWrite++);
+}
+void GLCD_WriteStringNeg(char * stringToWrite)
+{
+while(*stringToWrite)
+  GLCD_WriteCharNeg(*stringToWrite++);
 }
 //-------------------------------------------------------------------------------------------------
 //

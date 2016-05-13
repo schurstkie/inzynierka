@@ -202,12 +202,14 @@ GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
 GPIO_InitStructure.Pull = GPIO_NOPULL;
 HAL_GPIO_Init(KS0108_CS1_PORT, &GPIO_InitStructure);
+HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_SET);
 
 GPIO_InitStructure.Pin = KS0108_CS2_PIN;
 GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
 GPIO_InitStructure.Pull = GPIO_NOPULL;
 HAL_GPIO_Init(KS0108_CS2_PORT, &GPIO_InitStructure);
+HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_SET);
 
 GPIO_InitStructure.Pin = KS0108_RST_PIN;
 GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
@@ -236,6 +238,7 @@ GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
 GPIO_InitStructure.Pull = GPIO_NOPULL;
 HAL_GPIO_Init(KS0108_EN_PORT, &GPIO_InitStructure);
+HAL_GPIO_WritePin(KS0108_EN_PORT,KS0108_EN_PIN,GPIO_PIN_SET);
 
 GPIO_InitStructure.Pin = KS0108_D0_PIN;
 GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
