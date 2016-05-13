@@ -36,7 +36,14 @@
 #include "stm32f3xx_it.h"
 #include "gpio_config.h"
 
+#define ADC1_CHANNELS_NUMBER 1
+#define ADC2_CHANNELS_NUMBER 1
+
 uint32_t value=0;
+uint8_t	adc_1_value_cnt;
+uint8_t adc_2_value_cnt;
+uint8_t	adc_1_cnt;
+uint8_t adc_2_cnt;
 
 
 /* USER CODE BEGIN 0 */
@@ -64,6 +71,14 @@ void NMI_Handler(void)
 }
 
 extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+extern volatile uint8_t adc_1_conv_in_progress;
+extern volatile uint8_t adc_2_conv_in_progress;
+volatile uint8_t  adc_1_conv_in_progress;
+volatile uint8_t  adc_2_conv_in_progress;
+volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
+volatile uint16_t adc_2_value[ADC2_CHANNELS_NUMBER];
+
 /**
 * @brief This function handles System tick timer.
 */
@@ -74,7 +89,18 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
-  value=HAL_ADC_GetValue(&hadc1);
+
+  if(!adc_1_conv_in_progress)
+  {
+	  adc_1_conv_in_progress = 1;
+	  HAL_ADC_Start_IT(&hadc1);
+  }
+
+  if(!adc_2_conv_in_progress)
+  {
+	  adc_2_conv_in_progress = 1;
+	  HAL_ADC_Start_IT(&hadc2);
+  }
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
 //  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN))
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN);
@@ -96,6 +122,32 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+void ADC1_2_IRQHandler()
+{
+	if(ADC1->ISR & ADC_ISR_EOC)
+	{
+		adc_1_value[adc_1_cnt++] = ADC1->DR;
+	}
+
+	if(ADC2->ISR & ADC_ISR_EOC)
+	{
+		adc_2_value[adc_2_cnt++] = ADC2->DR;
+	}
+
+	if(ADC1->ISR & ADC_ISR_EOS)
+	{
+		adc_1_conv_in_progress = 0;
+//		HAL_ADC_Stop_IT(&hadc1);
+		adc_1_value_cnt = 0;
+	}
+
+	if(ADC2->ISR & ADC_ISR_EOS)
+	{
+		adc_2_conv_in_progress = 0;
+//		HAL_ADC_Stop_IT(&hadc2);
+		adc_2_value_cnt = 0;
+	}
+}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

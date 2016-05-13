@@ -47,6 +47,7 @@
 
 void NMI_Handler(void);
 void SysTick_Handler(void);
+void ADC1_2_IRQHandler();
 extern uint32_t value;
 
 

@@ -70,6 +70,11 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_DAC1_Init(void);
 
+
+
+
+
+
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
@@ -81,7 +86,13 @@ static void MX_DAC1_Init(void);
 
 int main(void)
 {
+	  MX_GPIO_Init();
+	  MX_ADC1_Init();
+	  MX_ADC2_Init();
+	  MX_DAC1_Init();
 
+	//NVIC_SetPriority(ADC1_2_IRQn, 2);
+	//NVIC_EnableIRQ(ADC1_2_IRQn);
 
   /* USER CODE BEGIN 1 */
 
@@ -91,15 +102,11 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* Configure the system clock */
   SystemClock_Config();
 
+
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_DAC1_Init();
+
 
 
   /* USER CODE BEGIN 2 */
@@ -117,11 +124,20 @@ int main(void)
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
 //  	GPIO_PinAFConfig(GPIOA, 0x08, 0x00);
 
-  HAL_ADC_Start(&hadc1);
+
 
   GLCD_Initialize();
   GLCD_Delay();
-  GLCD_Line(X1,X2,Y1,Y2);
+  GLCD_WriteString("HELLO");
+
+//  GLCD_Line(X1,X2,Y1,Y2);
+
+
+  HAL_ADC_Start_IT(&hadc1);
+
+  /* Configure the system clock */
+
+
 
   while (1)
   {
@@ -204,6 +220,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.Overrun = OVR_DATA_OVERWRITTEN;
   HAL_ADC_Init(&hadc1);
 
+
     /**Configure Regular Channel 
     */
   sConfig.Channel = ADC_CHANNEL_13;
@@ -213,7 +230,6 @@ void MX_ADC1_Init(void)
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-
 }
 
 /* ADC2 init function */
@@ -526,12 +542,12 @@ void MX_GPIO_Init(void)
 
 	GPIO_InitStructure.Pin = ANALOG_POT_1_PIN;
 	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 	HAL_GPIO_Init(ANALOG_POT_1_PORT, &GPIO_InitStructure);
 
 	GPIO_InitStructure.Pin = ANALOG_POT_2_PIN;
 	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 	HAL_GPIO_Init(ANALOG_POT_2_PORT, &GPIO_InitStructure);
 
 

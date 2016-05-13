@@ -8,12 +8,16 @@
 
 #define KS0108_PORT_DATA  GPIOB
 
-#define KS0108_RS_PIN    GPIO_Pin_15
+#define KS0108_RS_PIN    GPIO_Pin_10
 #define KS0108_RW_PIN    GPIO_Pin_11
 #define KS0108_EN_PIN    GPIO_Pin_12
 #define KS0108_RS_PORT    GPIOC
 #define KS0108_RW_PORT    GPIOC
 #define KS0108_EN_PORT    GPIOC
+
+#define KS0108_RST_PORT    GPIOC
+#define KS0108_RST_PIN    GPIO_Pin_15
+
 
 #define KS0108_CS1_PIN   GPIO_Pin_13
 #define KS0108_CS2_PIN   GPIO_Pin_14
@@ -49,7 +53,7 @@ GPIO_InitTypeDef GPIO_InitStructure;
 //-------------------------------------------------------------------------------------------------
 void GLCD_Delay(void)
 {
-  asm("nop");asm("nop");asm("nop");asm("nop");
+  asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
 }
 //-------------------------------------------------------------------------------------------------
 // Enalbe Controller (0-2)
@@ -117,8 +121,8 @@ GLCD_Delay();
 GLCD_EnableController(controller);
 GLCD_Delay();
 GLCD_SetCommandToPorts(commandToWrite);
-commandToWrite ^= 0xFF;
-GLCD_SetCommandToPorts(0x00);
+//commandToWrite ^= 0xFF;
+//GLCD_SetCommandToPorts(0x00);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 GLCD_Delay();
@@ -159,7 +163,7 @@ return tmp;
 //-------------------------------------------------------------------------------------------------
 void GLCD_WriteData(unsigned char dataToWrite)
 {
-while(GLCD_ReadStatus(screen_x / 64)&DISPLAY_STATUS_BUSY);
+//while(GLCD_ReadStatus(screen_x / 64)&DISPLAY_STATUS_BUSY);
    
 //GPIO_StructInit(&GPIO_InitStructure);
 //GPIO_InitStructure.GPIO_Pin = (0xFF << KS0108_D0);
@@ -173,8 +177,8 @@ GLCD_Delay();
 //GPIO_SetBits(KS0108_PORT, (dataToWrite << KS0108_D0));
 GLCD_SetCommandToPorts(dataToWrite);
 
-dataToWrite ^= 0xFF;
-GLCD_SetCommandToPorts(0x00);
+//dataToWrite ^= 0xFF;
+//GLCD_SetCommandToPorts(0x00);
 GLCD_Delay();
 GLCD_EnableController(screen_x / 64);
 GLCD_Delay();
@@ -204,6 +208,15 @@ GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
 GPIO_InitStructure.Pull = GPIO_NOPULL;
 HAL_GPIO_Init(KS0108_CS2_PORT, &GPIO_InitStructure);
+
+GPIO_InitStructure.Pin = KS0108_RST_PIN;
+GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
+GPIO_InitStructure.Pull = GPIO_NOPULL;
+HAL_GPIO_Init(KS0108_RST_PORT, &GPIO_InitStructure);
+HAL_GPIO_WritePin(KS0108_RST_PORT,KS0108_RST_PIN,GPIO_PIN_SET);
+
+
 
 
 GPIO_InitStructure.Pin = KS0108_RS_PIN;
@@ -287,13 +300,13 @@ unsigned char GLCD_ReadByteFromROMMemory(char * ptr)
 void GLCD_SetCommandToPorts(unsigned char commandToWrite)
 {
 	HAL_GPIO_WritePin(KS0108_D0_PORT,KS0108_D0_PIN,(commandToWrite&0x01));
-	HAL_GPIO_WritePin(KS0108_D1_PORT,KS0108_D1_PIN,(commandToWrite&0x02)>>2);
-	HAL_GPIO_WritePin(KS0108_D2_PORT,KS0108_D2_PIN,(commandToWrite&0x04)>>3);
-	HAL_GPIO_WritePin(KS0108_D3_PORT,KS0108_D3_PIN,(commandToWrite&0x08)>>4);
-	HAL_GPIO_WritePin(KS0108_D4_PORT,KS0108_D4_PIN,(commandToWrite&0x10)>>5);
-	HAL_GPIO_WritePin(KS0108_D5_PORT,KS0108_D5_PIN,(commandToWrite&0x20)>>6);
-	HAL_GPIO_WritePin(KS0108_D6_PORT,KS0108_D6_PIN,(commandToWrite&0x40)>>7);
-	HAL_GPIO_WritePin(KS0108_D7_PORT,KS0108_D7_PIN,(commandToWrite&0x80)>>8);
+	HAL_GPIO_WritePin(KS0108_D1_PORT,KS0108_D1_PIN,((commandToWrite&0x02)>>1));
+	HAL_GPIO_WritePin(KS0108_D2_PORT,KS0108_D2_PIN,((commandToWrite&0x04)>>2));
+	HAL_GPIO_WritePin(KS0108_D3_PORT,KS0108_D3_PIN,((commandToWrite&0x08)>>3));
+	HAL_GPIO_WritePin(KS0108_D4_PORT,KS0108_D4_PIN,((commandToWrite&0x10)>>4));
+	HAL_GPIO_WritePin(KS0108_D5_PORT,KS0108_D5_PIN,((commandToWrite&0x20)>>5));
+	HAL_GPIO_WritePin(KS0108_D6_PORT,KS0108_D6_PIN,((commandToWrite&0x40)>>6));
+	HAL_GPIO_WritePin(KS0108_D7_PORT,KS0108_D7_PIN,((commandToWrite&0x80)>>7));
 
 
 }

@@ -6,3 +6,4 @@
  */
 
 
+//uint32_t configTransmittance
