@@ -5,6 +5,7 @@
 //-------------------------------------------------------------------------------------------------
 #include "stm32f3xx_hal.h"
 #include "KS0108-STM32.h"
+#include "stdbool.h"
 
 #define KS0108_PORT_DATA  GPIOB
 
@@ -45,6 +46,8 @@
 
 extern unsigned char screen_x;
 extern unsigned char screen_y;
+bool first;
+
 
 GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -61,8 +64,12 @@ void GLCD_Delay(void)
 void GLCD_EnableController(unsigned char controller)
 {
 switch(controller){
-	case 0 : HAL_GPIO_WritePin(KS0108_CS1_PORT, KS0108_CS1_PIN,GPIO_PIN_RESET); break;
-	case 1 : HAL_GPIO_WritePin(KS0108_CS2_PORT, KS0108_CS2_PIN,GPIO_PIN_RESET); break;
+	case 0 : 	HAL_GPIO_WritePin(KS0108_CS2_PORT, KS0108_CS2_PIN,GPIO_PIN_SET);
+				HAL_GPIO_WritePin(KS0108_CS1_PORT, KS0108_CS1_PIN,GPIO_PIN_RESET);
+				break;
+	case 1 : 	HAL_GPIO_WritePin(KS0108_CS1_PORT, KS0108_CS1_PIN,GPIO_PIN_SET);
+				HAL_GPIO_WritePin(KS0108_CS2_PORT, KS0108_CS2_PIN,GPIO_PIN_RESET);
+				break;
 
 	}
 }
@@ -117,6 +124,7 @@ void GLCD_WriteCommand(unsigned char commandToWrite, unsigned char controller)
 
 HAL_GPIO_WritePin(KS0108_RS_PORT, KS0108_RS_PIN,GPIO_PIN_RESET);
 HAL_GPIO_WritePin(KS0108_RW_PORT, KS0108_RW_PIN,GPIO_PIN_RESET);
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 GLCD_Delay();
 GLCD_EnableController(controller);
 GLCD_Delay();
@@ -163,31 +171,69 @@ return tmp;
 //-------------------------------------------------------------------------------------------------
 void GLCD_WriteData(unsigned char dataToWrite)
 {
-//while(GLCD_ReadStatus(screen_x / 64)&DISPLAY_STATUS_BUSY);
-   
-//GPIO_StructInit(&GPIO_InitStructure);
-//GPIO_InitStructure.GPIO_Pin = (0xFF << KS0108_D0);
-//GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//GPIO_Init(KS0108_PORT, &GPIO_InitStructure);
 
+//if(!first)
+//{
+//	first=1;
+//	screen_x=127;
+//}
+if(screen_x>64)
+	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
+else
+	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
+
+GLCD_EnableController(screen_x % 64);
 HAL_GPIO_WritePin(KS0108_RW_PORT, KS0108_RW_PIN,GPIO_PIN_RESET);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_RS_PORT, KS0108_RS_PIN,GPIO_PIN_SET);
 GLCD_Delay();
-//GPIO_SetBits(KS0108_PORT, (dataToWrite << KS0108_D0));
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
+GLCD_Delay();
 GLCD_SetCommandToPorts(dataToWrite);
 
-//dataToWrite ^= 0xFF;
-//GLCD_SetCommandToPorts(0x00);
 GLCD_Delay();
-GLCD_EnableController(screen_x / 64);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_RESET);
 GLCD_Delay();
-GLCD_DisableController(screen_x / 64);
+HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_SET);
+HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_SET);
+GLCD_Delay();
 screen_x++;
+}
+void GLCD_WriteData_Reversed(unsigned char dataToWrite)
+{
+
+//if(!first)
+//{
+//	first=1;
+//	screen_x=127;
+//}
+if(screen_x<64)
+	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
+else
+	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
+
+GLCD_EnableController(screen_x % 64);
+HAL_GPIO_WritePin(KS0108_RW_PORT, KS0108_RW_PIN,GPIO_PIN_RESET);
+GLCD_Delay();
+HAL_GPIO_WritePin(KS0108_RS_PORT, KS0108_RS_PIN,GPIO_PIN_SET);
+GLCD_Delay();
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
+GLCD_Delay();
+GLCD_SetCommandToPorts(dataToWrite);
+
+GLCD_Delay();
+GLCD_Delay();
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
+GLCD_Delay();
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_RESET);
+GLCD_Delay();
+HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_SET);
+HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_SET);
+GLCD_Delay();
+screen_x--;
 }
 //-------------------------------------------------------------------------------------------------
 //
@@ -288,6 +334,7 @@ GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
 GPIO_InitStructure.Pull = GPIO_NOPULL;
 HAL_GPIO_Init(KS0108_D7_PORT, &GPIO_InitStructure);
 
+screen_x=127;
 }
 //-------------------------------------------------------------------------------------------------
 //
@@ -313,3 +360,15 @@ void GLCD_SetCommandToPorts(unsigned char commandToWrite)
 
 
 }
+//void GLCD_Bitmap(char * bmp, unsigned char x, unsigned char y, unsigned char dx, unsigned char dy)
+//{
+//	unsigned char i,j;
+//	for(j=0;j<dy/8;j++)
+//	{
+//		GLCD_GoTo(x,y+j);
+//		for(i=0;i<dx;i++)
+//		{
+//			GLCD_WriteData(GLCD_ReadByteFromROMMemory(bmp++))
+//		}
+//	}
+//}

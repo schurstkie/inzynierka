@@ -32,10 +32,13 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
+#include "stm32f334x8.h"
+#include "stm32f3xx_hal_conf.h"
+#include "stm32f3xx_hal_rcc_ex.h"
 #include "gpio_config.h"
 #include "stdbool.h"
 #include "KS0108.h"
-
+#include "justa2.h"
 
 
 /* USER CODE BEGIN Includes */
@@ -58,6 +61,12 @@ uint32_t X1=0;
 uint32_t X2=32;
 uint32_t Y1=0;
 uint32_t Y2=32;
+
+
+uint32_t ADCValue;
+int MeasurementNumber;
+
+unsigned char test=0;
 
 bool AUTO_MANUAL_MODE=false;
 
@@ -86,35 +95,14 @@ static void MX_DAC1_Init(void);
 
 int main(void)
 {
+	  HAL_Init();
+	  SystemClock_Config();
 	  MX_GPIO_Init();
 	  MX_ADC1_Init();
 	  MX_ADC2_Init();
 	  MX_DAC1_Init();
 
-	//NVIC_SetPriority(ADC1_2_IRQn, 2);
-	//NVIC_EnableIRQ(ADC1_2_IRQn);
 
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration----------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-  SystemClock_Config();
-
-
-  /* Initialize all configured peripherals */
-
-
-
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,GPIO_PIN_SET);
@@ -122,14 +110,18 @@ int main(void)
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
-//  	GPIO_PinAFConfig(GPIOA, 0x08, 0x00);
+
 
 
 
   GLCD_Initialize();
   GLCD_Delay();
   GLCD_ClearScreen();
-  GLCD_WriteStringNeg("HELLO");
+//  GLCD_GoTo(0,0);
+  //GLCD_GoTo(63,63);
+//  GLCD_Bitmap_Reversed(obrazek2,0,0,128,64);
+
+  //GLCD_WriteStringNeg("HELLO WORLD TEST");
 
 //  GLCD_Line(X1,X2,Y1,Y2);
 
@@ -148,7 +140,17 @@ int main(void)
 	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
 	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
 	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
-//
+
+	  if(HAL_ADC_PollForConversion(&hadc1,1000000)==HAL_OK)
+	  {
+		  ADCValue=HAL_ADC_GetValue(&hadc1);
+		  MeasurementNumber++;
+	  }
+
+
+
+
+	  //
 	  /*digital in to out*/
 //	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_1_PORT,DIGITAL_INPUT_1_PIN));
 //	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_2_PORT,DIGITAL_INPUT_2_PIN));
@@ -201,22 +203,33 @@ void SystemClock_Config(void)
 /* ADC1 init function */
 void MX_ADC1_Init(void)
 {
+//	__HAL_RCC_ADC12_CLK_ENABLE;
+    __IO uint32_t tmpreg;
+    SET_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
+    /* Delay after an RCC peripheral clock enabling */
+    tmpreg = READ_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
+    UNUSED(tmpreg);
+
+	HAL_NVIC_SetPriority(ADC1_IRQn,0,0);
+	HAL_NVIC_EnableIRQ(ADC1_IRQn);
 
   ADC_ChannelConfTypeDef sConfig;
 
     /**Common config 
     */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC;
+  hadc1.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION12b;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfDiscConversion = 0;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = EOC_SINGLE_CONV;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.EOCSelection = DISABLE;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.Overrun = OVR_DATA_OVERWRITTEN;
   HAL_ADC_Init(&hadc1);
@@ -224,13 +237,15 @@ void MX_ADC1_Init(void)
 
     /**Configure Regular Channel 
     */
-  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Channel = ADC_CHANNEL_7;
   sConfig.Rank = 1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+  if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  asm("bkpt 255");
 }
 
 /* ADC2 init function */

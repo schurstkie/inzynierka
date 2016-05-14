@@ -40,6 +40,7 @@
 #ifndef __STM32_HAL_LEGACY
 #define __STM32_HAL_LEGACY
 #include "stm32f3xx_hal_rcc.h"
+//#include "stm32f3xx_hal_rcc_ex.h"
 
 #ifdef __cplusplus
  extern "C" {
@@ -2259,7 +2260,7 @@
 #define __ADC12_CLK_DISABLE         __HAL_RCC_ADC12_CLK_DISABLE
 #define __ADC34_CLK_ENABLE          __HAL_RCC_ADC34_CLK_ENABLE
 #define __ADC34_CLK_DISABLE         __HAL_RCC_ADC34_CLK_DISABLE
-#define __ADC12_CLK_ENABLE          __HAL_RCC_ADC12_CLK_ENABLE
+//#define __ADC12_CLK_ENABLE          __HAL_RCC_ADC12_CLK_ENABLE
 #define __ADC12_CLK_DISABLE         __HAL_RCC_ADC12_CLK_DISABLE
 #define __DAC2_CLK_ENABLE           __HAL_RCC_DAC2_CLK_ENABLE
 #define __DAC2_CLK_DISABLE          __HAL_RCC_DAC2_CLK_DISABLE

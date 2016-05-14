@@ -7,6 +7,7 @@
 #include "font5x8.h"
 #include "graphic.h"
 #include "stdint.h"
+#include "justa.h"
 
 //-------------------------------------------------------------------------------------------------
 extern void GLCD_InitializePorts(void);
@@ -18,6 +19,8 @@ unsigned char screen_x = 0, screen_y = 0;
 void GLCD_Initialize(void)
 {
 uint32_t i;
+
+
 GLCD_InitializePorts();
 for(i = 0; i < 2; i++)
   GLCD_WriteCommand((DISPLAY_ON_CMD | ON), i);
@@ -70,20 +73,31 @@ int i;
 charToWrite -= 32;
 for(i = 0; i < 5; i++)
   GLCD_WriteData(reverse_byte(GLCD_ReadByteFromROMMemory((char *)((int)font5x8 + (5 * charToWrite) + i))));
-GLCD_WriteData(0x00);
+//GLCD_WriteData(0x00);
 }
 //-------------------------------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------------------------------
 void GLCD_WriteString(char * stringToWrite)
 {
-while(*stringToWrite)
-  GLCD_WriteChar(*stringToWrite++);
+	while(*stringToWrite)
+	  GLCD_WriteChar(*stringToWrite++);
 }
 void GLCD_WriteStringNeg(char * stringToWrite)
 {
-while(*stringToWrite)
-  GLCD_WriteCharNeg(*stringToWrite++);
+	int size=0;
+	int i=0;
+
+		while(*stringToWrite)
+		{
+			size++;
+			*stringToWrite++;
+		}
+		*stringToWrite--;
+		i=0;
+		for(i;i<size;i++)
+			GLCD_WriteCharNeg(*stringToWrite--);
+
 }
 //-------------------------------------------------------------------------------------------------
 //
@@ -110,6 +124,25 @@ for(j = 0; j < dy / 8; j++)
   GLCD_GoTo(x,y + j);
   for(i = 0; i < dx; i++) 
     GLCD_WriteData(GLCD_ReadByteFromROMMemory(bmp++));
+  }
+}
+void GLCD_Bitmap_Reversed(char * bmp, unsigned char x, unsigned char y, unsigned char dx, unsigned char dy)
+{
+unsigned char i, j;
+y=7-y;
+x=127-x;
+for(j = 0; j < dy / 8; j++)
+  {
+  GLCD_GoTo(x,y - j);
+  for(i = 0; i < dx; i++)
+	  bmp++;
+  i=0;
+  for(i = 0; i < dx; i++)
+    GLCD_WriteData_Reversed(reverse_byte(GLCD_ReadByteFromROMMemory(bmp--)));
+  i=0;
+  for(i = 0; i < dx; i++)
+  	  bmp++;
+  i=0;
   }
 }
 //-------------------------------------------------------------------------------------------------

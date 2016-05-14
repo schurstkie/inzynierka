@@ -35,6 +35,9 @@
 #include "stm32f3xx.h"
 #include "stm32f3xx_it.h"
 #include "gpio_config.h"
+#include "KS0108-STM32.h"
+#include "stdlib.h"
+#include "itoa.h"
 
 #define ADC1_CHANNELS_NUMBER 1
 #define ADC2_CHANNELS_NUMBER 1
@@ -44,6 +47,10 @@ uint8_t	adc_1_value_cnt;
 uint8_t adc_2_value_cnt;
 uint8_t	adc_1_cnt;
 uint8_t adc_2_cnt;
+int licznik=0;
+char temp[16];
+
+extern unsigned char test;
 
 
 /* USER CODE BEGIN 0 */
@@ -89,7 +96,15 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
-
+  if(licznik==100 | licznik==255)
+  {
+  GLCD_GoTo(127,0);
+  itoa(licznik,temp,10);
+  GLCD_WriteStringNeg(temp);
+  }
+  if(licznik>500)
+	  licznik=0;
+  licznik++;
   if(!adc_1_conv_in_progress)
   {
 	  adc_1_conv_in_progress = 1;
@@ -101,6 +116,7 @@ void SysTick_Handler(void)
 	  adc_2_conv_in_progress = 1;
 	  HAL_ADC_Start_IT(&hadc2);
   }
+
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
 //  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN))
 //  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN);
