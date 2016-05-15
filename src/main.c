@@ -41,6 +41,8 @@
 #include "KS0108.h"
 #include "justa2.h"
 #include "arm_math.h"
+#include "mode_config.h"
+
 
 #define ADC_BUFFER_LENGTH (6)
 #define ADC1_CHANNELS_NUMBER 6
@@ -119,14 +121,15 @@ static void ConfigureDMA(void);
 
 int main(void)
 {
-	  HAL_Init();
-	  SystemClock_Config();
-	  MX_GPIO_Init();
-	  ConfigureDMA();
-	  MX_ADC1_Init();
-	  MX_ADC2_Init();
-	  MX_DAC1_Init();
-	  MX_TIM6_Init();
+  HAL_Init();
+  SystemClock_Config();
+  MX_GPIO_Init();
+  ConfigureDMA();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
+  MX_DAC1_Init();
+  MX_TIM6_Init();
+  setDefaultConfig();
 
 
 
@@ -570,6 +573,18 @@ void MX_GPIO_Init(void)
     GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
     GPIO_InitStructure.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(VOLT_CURRENT_SEL_2_1_PORT, &GPIO_InitStructure);
+
+    GPIO_InitStructure.Pin = VOLT_CURRENT_INPUT_SEL_1_PIN;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
+	GPIO_InitStructure.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(VOLT_CURRENT_INPUT_SEL_1_PORT, &GPIO_InitStructure);
+
+	GPIO_InitStructure.Pin = VOLT_CURRENT_INPUT_SEL_2_PIN;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
+	GPIO_InitStructure.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(VOLT_CURRENT_INPUT_SEL_2_PORT, &GPIO_InitStructure);
 
 
     /* DIGITAL OUTPUT SWITCHES CONFIG */
