@@ -116,17 +116,11 @@ return status;
 //-------------------------------------------------------------------------------------------------
 void GLCD_WriteCommand(unsigned char commandToWrite, uint8_t controller)
 {
-//while(GLCD_ReadStatus(controller)&DISPLAY_STATUS_BUSY);
-//GPIO_StructInit(&GPIO_InitStructure);
-//GPIO_InitStructure.GPIO_Pin  = (0xFF << KS0108_D0);
-//GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//GPIO_Init(KS0108_PORT, &GPIO_InitStructure);
-HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
-GLCD_Delay();
-if(controller)
-	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
-else
-	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
+
+//if(controller)
+//	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
+//else
+//	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
 
 GLCD_EnableController(controller);
 GLCD_Delay();
@@ -134,13 +128,15 @@ HAL_GPIO_WritePin(KS0108_RS_PORT, KS0108_RS_PIN,GPIO_PIN_RESET);
 HAL_GPIO_WritePin(KS0108_RW_PORT, KS0108_RW_PIN,GPIO_PIN_RESET);
 GLCD_Delay();
 GLCD_SetCommandToPorts(commandToWrite);
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_RESET);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_SET);
 HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_SET);
 GLCD_Delay();
-HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
+GLCD_SetCommandToPorts(0x00);
+//HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -183,17 +179,21 @@ void GLCD_WriteData(unsigned char dataToWrite)
 //}
 
 
-if(screen_x>halfScreen)
-	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
-else
-	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
+//if(screen_x>halfScreen)
+//	HAL_GPIO_WritePin(KS0108_CS1_PORT,KS0108_CS1_PIN,GPIO_PIN_RESET);
+//else
+//	HAL_GPIO_WritePin(KS0108_CS2_PORT,KS0108_CS2_PIN,GPIO_PIN_RESET);
 
-//GLCD_EnableController(screen_x % 64);
+	if(screen_x>63)
+	GLCD_EnableController(1);
+	if(screen_x<=63)
+	GLCD_EnableController(0);
+	GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_RW_PORT, KS0108_RW_PIN,GPIO_PIN_RESET);
 HAL_GPIO_WritePin(KS0108_RS_PORT, KS0108_RS_PIN,GPIO_PIN_SET);
 GLCD_Delay();
 GLCD_SetCommandToPorts(dataToWrite);
-
+HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_SET);
 GLCD_Delay();
 HAL_GPIO_WritePin(KS0108_EN_PORT, KS0108_EN_PIN,GPIO_PIN_RESET);
 GLCD_Delay();

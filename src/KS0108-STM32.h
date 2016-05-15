@@ -1,7 +1,7 @@
 
 
-#ifndef KS0108-STM32_H_
-#define KS0108-STM32_H_
+#ifndef  KS0108-STM32_H_
+#define  KS0108-STM32_H_
 
 
 void GLCD_SetCommandToPorts(unsigned char);
