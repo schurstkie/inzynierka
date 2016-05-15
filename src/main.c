@@ -59,6 +59,7 @@ DMA_HandleTypeDef  	g_DmaHandle1;
 DMA_HandleTypeDef 	g_DmaHandle2;
 DMA_HandleTypeDef  	g_DmaHandle3;
 DMA_HandleTypeDef 	g_DmaHandle4;
+TIM_HandleTypeDef 	htim6;
 
 
 //uint32_t ticks;
@@ -77,6 +78,8 @@ uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
 uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
 
 uint32_t ADCValue;
+uint32_t DACValues1[10];
+uint32_t DACValues2[10];
 
 volatile bool COUNTER_FLAG=false;
 volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
@@ -119,11 +122,12 @@ int main(void)
 	  HAL_Init();
 	  SystemClock_Config();
 	  MX_GPIO_Init();
+	  ConfigureDMA();
 	  MX_ADC1_Init();
 	  MX_ADC2_Init();
 	  MX_DAC1_Init();
-//	  MX_TIM6_Init();
-	  ConfigureDMA();
+	  MX_TIM6_Init();
+
 
 
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,GPIO_PIN_SET);
@@ -148,9 +152,15 @@ int main(void)
 
 
 //  HAL_ADC_Start_IT(&hadc1);
+  HAL_TIM_Base_Start(&htim6);
   HAL_ADC_Start_DMA(&hadc1, g_ADCBuffer1, ADC_BUFFER_LENGTH);
   HAL_ADC_Start_DMA(&hadc2, g_ADCBuffer2, ADC_BUFFER_LENGTH);
-//  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)dac_values,32,DAC_ALIGN_12B_R);
+
+  HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)DACValues1,32,DAC_ALIGN_12B_R);
+
+  HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2,(uint32_t*)DACValues2,32,DAC_ALIGN_12B_R);
 
   int licznik=0;
   while (1)
@@ -241,11 +251,6 @@ void MX_ADC1_Init(void)
 {
 
 	__HAL_RCC_ADC12_CLK_ENABLE();
-//    __IO uint32_t tmpreg;
-//    SET_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
-//    /* Delay after an RCC peripheral clock enabling */
-//    tmpreg = READ_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
-//    UNUSED(tmpreg);
 
 	HAL_NVIC_SetPriority(ADC1_IRQn,0,0);
 	HAL_NVIC_EnableIRQ(ADC1_IRQn);
@@ -376,6 +381,7 @@ __HAL_RCC_ADC2_CLK_ENABLE();
 /* DAC1 init function */
 void MX_DAC1_Init(void)
 {
+	__DAC1_CLK_ENABLE();
 
   DAC_ChannelConfTypeDef sConfig;
 
@@ -692,7 +698,7 @@ void ConfigureDMA()
 
 	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle2);
 
-	HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 1);
 	HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 
 	g_DmaHandle3.Instance=DMA1_Channel3;
@@ -702,13 +708,12 @@ void ConfigureDMA()
 	g_DmaHandle3.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
 	g_DmaHandle3.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
 	g_DmaHandle3.Init.Mode = DMA_CIRCULAR;
-
-
+	g_DmaHandle3.Init.Priority = DMA_PRIORITY_LOW;
 	HAL_DMA_Init(&g_DmaHandle3);
+	__HAL_REMAPDMA_CHANNEL_ENABLE(HAL_REMAPDMA_TIM6_DAC1_CH1_DMA1_CH3);
+	__HAL_LINKDMA(&hdac1, DMA_Handle1, g_DmaHandle3);
 
-	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle3);
-
-	HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 1);
 	HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
 
 	g_DmaHandle4.Instance=DMA1_Channel4;
@@ -718,32 +723,34 @@ void ConfigureDMA()
 	g_DmaHandle4.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
 	g_DmaHandle4.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
 	g_DmaHandle4.Init.Mode = DMA_CIRCULAR;
+	g_DmaHandle4.Init.Priority = DMA_PRIORITY_LOW;
 
 	HAL_DMA_Init(&g_DmaHandle4);
+	__HAL_REMAPDMA_CHANNEL_ENABLE(HAL_REMAPDMA_TIM7_DAC1_CH2_DMA1_CH4);
+	__HAL_LINKDMA(&hdac1, DMA_Handle2, g_DmaHandle4);
 
-	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle4);
-
-	HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 1);
 	HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 }
 
 /* TIM6 init function */
-//void MX_TIM6_Init(void)
-//{
-//
-//  TIM_MasterConfigTypeDef sMasterConfig;
-//
-//  htim6.Instance = TIM6;
-//  htim6.Init.Prescaler = 0;
-//  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-//  htim6.Init.Period = 32768;
-//  HAL_TIM_Base_Init(&htim6);
-//
-//  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-//  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-//  HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
-//
-//}
+void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 0;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 65535;
+  HAL_TIM_Base_Init(&htim6);
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
+  __TIM6_CLK_ENABLE();
+
+}
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */

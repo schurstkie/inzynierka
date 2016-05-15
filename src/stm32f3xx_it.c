@@ -95,6 +95,23 @@ extern HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		AN1_Pot_Value=adc_1_value[0]*0.8056640625;
 		AN2_Pot_Value=adc_1_value[1]*0.8056640625;
 		}
+extern HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
+		{
+
+		}
+extern HAL_DAC_ConvCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
+		{
+
+		}
+extern HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
+		{
+
+		}
+extern HAL_DAC_ConvHalfCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
+		{
+
+		}
+
 
 
 
