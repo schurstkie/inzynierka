@@ -20,7 +20,6 @@ void GLCD_Initialize(void)
 {
 uint32_t i;
 
-
 GLCD_InitializePorts();
 for(i = 0; i < 2; i++)
   GLCD_WriteCommand((DISPLAY_ON_CMD | ON), i);
@@ -40,8 +39,8 @@ for(i = 0; i < KS0108_SCREEN_WIDTH/64; i++)
   GLCD_WriteCommand(DISPLAY_SET_X | y,i);
   GLCD_WriteCommand(DISPLAY_START_LINE | 0,i);
   }
-//GLCD_WriteCommand(DISPLAY_SET_Y | (x % 64), (x / 64));
-//GLCD_WriteCommand(DISPLAY_SET_X | y, (x / 64));
+GLCD_WriteCommand(DISPLAY_SET_Y | (x % 64), (x / 64));
+GLCD_WriteCommand(DISPLAY_SET_X | y, (x / 64));
 }
 void GLCD_GoTo(uint8_t x, uint8_t y)
 {

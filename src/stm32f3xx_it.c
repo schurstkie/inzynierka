@@ -39,10 +39,11 @@
 #include "stdlib.h"
 #include "itoa.h"
 #include "arm_math.h"
+#include "stdbool.h"
 
-#define ADC1_CHANNELS_NUMBER 2
+#define ADC1_CHANNELS_NUMBER 6
 #define ADC2_CHANNELS_NUMBER 2
-#define ADC_BUFFER_LENGTH 4
+#define ADC_BUFFER_LENGTH 3
 
 uint32_t value=0;
 uint8_t	adc_1_value_cnt;
@@ -50,7 +51,7 @@ uint8_t adc_2_value_cnt;
 uint8_t	adc_1_cnt;
 uint8_t adc_2_cnt;
 int licznik=0;
-char temp[16];
+
 extern ADCValue;
 
 extern unsigned char test;
@@ -58,25 +59,35 @@ extern float32_t AN1_Pot_Value;
 extern float32_t AN2_Pot_Value;
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
-extern DMA_HandleTypeDef g_DmaHandle;
+extern DMA_HandleTypeDef g_DmaHandle1;
+extern DMA_HandleTypeDef g_DmaHandle2;
+extern DMA_HandleTypeDef g_DmaHandle3;
+extern DMA_HandleTypeDef g_DmaHandle4;
 
-extern uint32_t g_ADCBuffer[ADC_BUFFER_LENGTH];
+extern uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
+extern uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
 
-
+volatile uint32_t ticks;
+extern volatile bool COUNTER_FLAG;
 extern volatile uint8_t adc_1_conv_in_progress;
 extern volatile uint8_t adc_2_conv_in_progress;
 volatile uint8_t  adc_1_conv_in_progress;
 volatile uint8_t  adc_2_conv_in_progress;
-volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
-volatile uint16_t adc_2_value[ADC2_CHANNELS_NUMBER];
+extern volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
+extern volatile uint16_t adc_2_value[ADC2_CHANNELS_NUMBER];
 
 
 extern HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		{
 //		ADCValue=accumulate(g_ADCBuffer,g_ADCBuffer + ADC_BUFFER_LENGTH,0)/ADC_BUFFER_LENGTH;
 
-		adc_1_value[0]=(g_ADCBuffer[0]+g_ADCBuffer[2])/2;
-		adc_1_value[1]=(g_ADCBuffer[1]+g_ADCBuffer[3])/2;
+		adc_1_value[0]=g_ADCBuffer1[0];
+		adc_1_value[1]=g_ADCBuffer1[1];
+		adc_1_value[2]=g_ADCBuffer1[2];
+
+		adc_1_value[3]=g_ADCBuffer2[0];
+		adc_1_value[4]=g_ADCBuffer2[1];
+		adc_1_value[5]=g_ADCBuffer2[2];
 
 //		if(adc_1_cnt==2)
 //			adc_1_cnt=0;
@@ -84,6 +95,8 @@ extern HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		AN1_Pot_Value=adc_1_value[0]*0.8056640625;
 		AN2_Pot_Value=adc_1_value[1]*0.8056640625;
 		}
+
+
 
 /* USER CODE BEGIN 0 */
 
@@ -120,21 +133,13 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
-//if(licznik==10)
-//{
-//  licznik=0;
-//  GLCD_GoToReversed(0,6);
-//  itoa((int)AN1_Pot_Value,temp,10);
-//  GLCD_ClearPage(6);
-//  GLCD_GoToReversed(0,6);
-//  GLCD_WriteStringNeg(temp);
-//  GLCD_GoToReversed(0,5);
-//	itoa((int)AN2_Pot_Value,temp,10);
-//	GLCD_ClearPage(5);
-//	GLCD_GoToReversed(0,5);
-//	GLCD_WriteStringNeg(temp);
-//}
-//licznik++;
+  if((COUNTER_FLAG)&(ticks!=0))
+  ticks--;
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_1_PORT,DIGITAL_OUTPUT_SWITCH_1_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
+  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
   //
 //  if(!adc_1_conv_in_progress)
 //  {
@@ -174,38 +179,44 @@ void SysTick_Handler(void)
 //	HAL_DMA_IRQHandler(&g_DmaHandle);
 //
 //}
+
+
+void SysTickDelay(uint32_t i)
+{
+	COUNTER_FLAG=true;
+	ticks=i;
+	while(COUNTER_FLAG)
+	{
+		if(ticks==0x00)
+			COUNTER_FLAG=false;
+	}
+
+}
+
 void ADC1_2_IRQHandler()
 {
 	HAL_ADC_IRQHandler(&hadc1);
 
-
-//	if(ADC1->ISR & ADC_ISR_EOC)
-//	{
-//		adc_1_value[adc_1_cnt++] = ADC1->DR;
-//	}
-//
-////	if(ADC2->ISR & ADC_ISR_EOC)
-////	{
-////		adc_2_value[adc_2_cnt++] = ADC2->DR;
-////	}
-//
-//	if(ADC1->ISR & ADC_ISR_EOS)
-//	{
-//		adc_1_conv_in_progress = 0;
-//		HAL_ADC_Stop_IT(&hadc1);
-//		adc_1_value_cnt = 0;
-//	}
-
-//	if(ADC2->ISR & ADC_ISR_EOS)
-//	{
-//		adc_2_conv_in_progress = 0;
-////		HAL_ADC_Stop_IT(&hadc2);
-//		adc_2_value_cnt = 0;
-//	}
 }
+
+
 void DMA1_Channel1_IRQHandler()
 {
-	HAL_DMA_IRQHandler(&g_DmaHandle);
+	HAL_DMA_IRQHandler(&g_DmaHandle1);
+}
+
+void DMA1_Channel2_IRQHandler()
+{
+	HAL_DMA_IRQHandler(&g_DmaHandle2);
+}
+void DMA1_Channel3_IRQHandler()
+{
+	HAL_DMA_IRQHandler(&g_DmaHandle3);
+}
+
+void DMA1_Channel4_IRQHandler()
+{
+	HAL_DMA_IRQHandler(&g_DmaHandle4);
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
