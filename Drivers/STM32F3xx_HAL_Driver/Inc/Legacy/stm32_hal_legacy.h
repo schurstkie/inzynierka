@@ -40,7 +40,7 @@
 #ifndef __STM32_HAL_LEGACY
 #define __STM32_HAL_LEGACY
 #include "stm32f3xx_hal_rcc.h"
-//#include "stm32f3xx_hal_dma.h"
+//#include "stm32f3xx_hal_rcc_ex.h"
 
 #ifdef __cplusplus
  extern "C" {

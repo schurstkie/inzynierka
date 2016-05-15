@@ -11,16 +11,13 @@
   #define ON	0x01
   #define OFF	0x00
 #define DISPLAY_STATUS_BUSY	0x80
-#include "stdint.h"
 
 void GLCD_Initalize(void);
 //void GLCD_SetCommandToPorts(unsigned char);
 void GLCD_WriteData(unsigned char);
 void GLCD_WriteCommand(unsigned char, unsigned char);
 void GLCD_ClearScreen(void);
-void GLCD_ClearPage(unsigned char);
 void GLCD_GoTo(unsigned char, unsigned char);
-void GLCD_GoToReversed(unsigned char, unsigned char);
 void GLCD_WriteString(char *);
 void GLCD_WriteStringNeg(char *);
 void GLCD_WriteChar(char);
@@ -29,6 +26,6 @@ void GLCD_WriteCharNeg(char);
 //unsigned char GLCD_ReadByteFromROMMemory(char *);
 //unsigned char GLCD_ReadData(void);
 void GLCD_Bitmap(char *, unsigned char, unsigned char, unsigned char, unsigned char);
-void GLCD_Bitmap_Reversed(char *, uint8_t x, uint8_t y, unsigned char, unsigned char);
+void GLCD_Bitmap_Reversed(char *, unsigned char, unsigned char, unsigned char, unsigned char);
 
 

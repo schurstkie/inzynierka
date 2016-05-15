@@ -12,7 +12,7 @@
 //-------------------------------------------------------------------------------------------------
 extern void GLCD_InitializePorts(void);
 //-------------------------------------------------------------------------------------------------
-uint8_t screen_x = 0, screen_y = 0;
+unsigned char screen_x = 0, screen_y = 0;
 //-------------------------------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------------------------------
@@ -28,11 +28,11 @@ for(i = 0; i < 2; i++)
 //-------------------------------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------------------------------
-void GLCD_GoToReversed(unsigned char x, unsigned char y)
+void GLCD_GoTo(unsigned char x, unsigned char y)
 {
 unsigned char i;
-screen_x = 127-x;
-screen_y = 7-y;
+screen_x = x;
+screen_y = y;
 
 for(i = 0; i < KS0108_SCREEN_WIDTH/64; i++)
   {
@@ -40,23 +40,8 @@ for(i = 0; i < KS0108_SCREEN_WIDTH/64; i++)
   GLCD_WriteCommand(DISPLAY_SET_X | y,i);
   GLCD_WriteCommand(DISPLAY_START_LINE | 0,i);
   }
-//GLCD_WriteCommand(DISPLAY_SET_Y | (x % 64), (x / 64));
-//GLCD_WriteCommand(DISPLAY_SET_X | y, (x / 64));
-}
-void GLCD_GoTo(uint8_t x, uint8_t y)
-{
-	uint8_t i;
-	screen_x = x;
-	screen_y = y;
-
-	for(i = 0; i < KS0108_SCREEN_WIDTH/64; i++)
-	  {
-	  GLCD_WriteCommand(DISPLAY_SET_Y | 0,i);
-	  GLCD_WriteCommand(DISPLAY_SET_X | y,i);
-	  GLCD_WriteCommand(DISPLAY_START_LINE | 0,i);
-	  }
-//	GLCD_WriteCommand(DISPLAY_SET_Y | (x % 64), (x / 64));
-//	GLCD_WriteCommand(DISPLAY_SET_X | y, (x / 64));
+GLCD_WriteCommand(DISPLAY_SET_Y | (x % 64), (x / 64));
+GLCD_WriteCommand(DISPLAY_SET_X | y, (x / 64));
 }
 //-------------------------------------------------------------------------------------------------
 //
@@ -71,14 +56,6 @@ for(j = 0; j < KS0108_SCREEN_HEIGHT/8; j++)
     GLCD_WriteData(0x00);
   }
 }
-void GLCD_ClearPage(unsigned char j)
-{
-unsigned char i;
-  GLCD_GoToReversed(0,j);
-  for(i = 0; i < KS0108_SCREEN_WIDTH; i++)
-    GLCD_WriteData(0x00);
-}
-
 //-------------------------------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------------------------------
@@ -149,9 +126,9 @@ for(j = 0; j < dy / 8; j++)
     GLCD_WriteData(GLCD_ReadByteFromROMMemory(bmp++));
   }
 }
-void GLCD_Bitmap_Reversed(char * bmp, uint8_t x, uint8_t y, unsigned char dx, unsigned char dy)
+void GLCD_Bitmap_Reversed(char * bmp, unsigned char x, unsigned char y, unsigned char dx, unsigned char dy)
 {
-uint8_t i, j;
+unsigned char i, j;
 y=7-y;
 x=127-x;
 for(j = 0; j < dy / 8; j++)
