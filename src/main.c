@@ -42,9 +42,7 @@
 #include "justa2.h"
 #include "arm_math.h"
 
-#define ADC_BUFFER_LENGTH (6)
-#define ADC1_CHANNELS_NUMBER 6
-#define ADC2_CHANNELS_NUMBER 2
+#define ADC_BUFFER_LENGTH (4)
 
 /* USER CODE BEGIN Includes */
 
@@ -55,13 +53,8 @@ ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
 DAC_HandleTypeDef hdac1;
-DMA_HandleTypeDef  	g_DmaHandle1;
-DMA_HandleTypeDef 	g_DmaHandle2;
-DMA_HandleTypeDef  	g_DmaHandle3;
-DMA_HandleTypeDef 	g_DmaHandle4;
+DMA_HandleTypeDef  g_DmaHandle;
 
-
-//uint32_t ticks;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -73,15 +66,9 @@ uint32_t Analog_voltage_input2=0;
 float32_t AN1_Pot_Value;
 float32_t AN2_Pot_Value;
 
-uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
-uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
+uint32_t g_ADCBuffer[ADC_BUFFER_LENGTH];
 
 uint32_t ADCValue;
-
-volatile bool COUNTER_FLAG=false;
-volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
-volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
-char temp[16];
 //int MeasurementNumber;
 
 
@@ -98,7 +85,6 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_DAC1_Init(void);
 static void ConfigureDMA(void);
-//static void MX_TIM6_Init(void);
 
 
 
@@ -122,8 +108,7 @@ int main(void)
 	  MX_ADC1_Init();
 	  MX_ADC2_Init();
 	  MX_DAC1_Init();
-//	  MX_TIM6_Init();
-	  ConfigureDMA();
+//	  ConfigureDMA();
 
 
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,GPIO_PIN_SET);
@@ -131,16 +116,13 @@ int main(void)
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,GPIO_PIN_SET);
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
 
-
-
-
   GLCD_Initialize();
   GLCD_Delay();
   GLCD_ClearScreen();
   GLCD_Delay();
 //  GLCD_GoToReversed(0,0);
   //GLCD_GoTo(63,63);
-//  GLCD_Bitmap_Reversed(obrazek2,0,0,128,64);
+  GLCD_Bitmap_Reversed(obrazek2,0,0,128,64);
 //while(1);
   //GLCD_WriteStringNeg("HELLO WORLD TEST");
 
@@ -148,32 +130,16 @@ int main(void)
 
 
 //  HAL_ADC_Start_IT(&hadc1);
-  HAL_ADC_Start_DMA(&hadc1, g_ADCBuffer1, ADC_BUFFER_LENGTH);
-  HAL_ADC_Start_DMA(&hadc2, g_ADCBuffer2, ADC_BUFFER_LENGTH);
-//  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)dac_values,32,DAC_ALIGN_12B_R);
+  HAL_ADC_Start_DMA(&hadc1, g_ADCBuffer, ADC_BUFFER_LENGTH);
 
-  int licznik=0;
   while (1)
   {
   if(AUTO_MANUAL_MODE==0)
   {
-
-	  SysTickDelay(10);
-	  for(licznik=0;licznik<ADC1_CHANNELS_NUMBER;licznik++)
-	  {
-		  GLCD_GoToReversed(0,licznik);
-		  itoa((int)adc_1_value[licznik],temp,10);
-		  GLCD_ClearPage(licznik);
-		  GLCD_GoToReversed(0,licznik);
-		  GLCD_WriteStringNeg(temp);
-	  }
-	  /*
-	  GLCD_GoToReversed(0,i);
-	  itoa((int)AN2_Pot_Value,temp,10);
-	  GLCD_ClearPage(5);
-	  GLCD_GoToReversed(0,5);
-	  GLCD_WriteStringNeg(temp);
-	    */
+	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_1_PORT,DIGITAL_OUTPUT_SWITCH_1_PIN)));
+	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
+	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
+	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
 
 //	  if(HAL_ADC_PollForConversion(&hadc1,1000000)==HAL_OK)
 //	  {
@@ -199,7 +165,6 @@ int main(void)
 
 /** System Clock Configuration
 */
-
 void SystemClock_Config(void)
 {
 
@@ -239,13 +204,12 @@ void SystemClock_Config(void)
 /* ADC1 init function */
 void MX_ADC1_Init(void)
 {
-
-	__HAL_RCC_ADC12_CLK_ENABLE();
-//    __IO uint32_t tmpreg;
-//    SET_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
-//    /* Delay after an RCC peripheral clock enabling */
-//    tmpreg = READ_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
-//    UNUSED(tmpreg);
+//	__HAL_RCC_ADC12_CLK_ENABLE;
+    __IO uint32_t tmpreg;
+    SET_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
+    /* Delay after an RCC peripheral clock enabling */
+    tmpreg = READ_BIT(RCC->AHBENR, RCC_AHBENR_ADC12EN);
+    UNUSED(tmpreg);
 
 	HAL_NVIC_SetPriority(ADC1_IRQn,0,0);
 	HAL_NVIC_EnableIRQ(ADC1_IRQn);
@@ -264,7 +228,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 3;
+  hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = DISABLE;
   hadc1.Init.LowPowerAutoWait = DISABLE;
@@ -275,7 +239,6 @@ void MX_ADC1_Init(void)
 
     /**Configure Regular Channel 
     */
-  /*Analog Pot1 Output*/
   sConfig.Channel = ADC_CHANNEL_7;
   sConfig.Rank = 1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -286,7 +249,6 @@ void MX_ADC1_Init(void)
   if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	  asm("bkpt 255");
 
-  /*Analog Pot2 Output*/
   sConfig.Channel = ADC_CHANNEL_8;
 	sConfig.Rank = 2;
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -297,42 +259,27 @@ void MX_ADC1_Init(void)
 	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	  asm("bkpt 255");
 
-	/*Analog 1 Input Current Mode */
-	sConfig.Channel = ADC_CHANNEL_13;
-	sConfig.Rank = 3;
-	sConfig.SingleDiff = ADC_SINGLE_ENDED;
-	sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
-	sConfig.OffsetNumber = ADC_OFFSET_NONE;
-	sConfig.Offset = 0;
-	HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-	if(HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	  asm("bkpt 255");
-
-
-
 }
 
 /* ADC2 init function */
 void MX_ADC2_Init(void)
 {
 
-__HAL_RCC_ADC2_CLK_ENABLE();
   ADC_ChannelConfTypeDef sConfig;
 
     /**Common config 
     */
   hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC;
   hadc2.Init.Resolution = ADC_RESOLUTION12b;
-  hadc2.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc2.Init.ContinuousConvMode = ENABLE;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
   hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2.Init.NbrOfConversion = 3;
-  hadc2.Init.DMAContinuousRequests = ENABLE;
-  hadc2.Init.EOCSelection = DISABLE;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DMAContinuousRequests = DISABLE;
+  hadc2.Init.EOCSelection = EOC_SINGLE_CONV;
   hadc2.Init.LowPowerAutoWait = DISABLE;
   hadc2.Init.Overrun = OVR_DATA_OVERWRITTEN;
   HAL_ADC_Init(&hadc2);
@@ -342,32 +289,28 @@ __HAL_RCC_ADC2_CLK_ENABLE();
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
-  if(HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  	  asm("bkpt 255");
 
-  sConfig.Channel = ADC_CHANNEL_14;
-  sConfig.Rank = 2;
+  sConfig.Channel = ADC_CHANNEL_7;
+  sConfig.Rank = 1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset=0;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
-  if(HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  	  asm("bkpt 255");
 
-  sConfig.Channel = ADC_CHANNEL_15;
-  sConfig.Rank = 3;
+
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = 1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset=0;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
-  if(HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  	  asm("bkpt 255");
+
 
 
 
@@ -386,13 +329,12 @@ void MX_DAC1_Init(void)
 
     /**DAC channel OUT1 config 
     */
-  sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO;
+  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
   sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_1);
 
     /**DAC channel OUT2 config 
     */
-  sConfig.DAC_Trigger= DAC_TRIGGER_T6_TRGO;
   sConfig.DAC_OutputSwitch = DAC_OUTPUTSWITCH_ENABLE;
   HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_2);
 
@@ -629,17 +571,6 @@ void MX_GPIO_Init(void)
 	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 	HAL_GPIO_Init(ANALOG_POT_2_PORT, &GPIO_InitStructure);
 
-	GPIO_InitStructure.Pin = ANALOG_OUTPUT_1_PIN;
-	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	HAL_GPIO_Init(ANALOG_OUTPUT_1_PORT, &GPIO_InitStructure);
-
-	GPIO_InitStructure.Pin = ANALOG_OUTPUT_2_PIN;
-	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	HAL_GPIO_Init(ANALOG_OUTPUT_2_PORT, &GPIO_InitStructure);
-
-
 
   //current up default
   HAL_GPIO_WritePin(CURRENT_MODE_UP_1_PORT,CURRENT_MODE_UP_1_PIN,GPIO_PIN_RESET);
@@ -665,85 +596,22 @@ void MX_GPIO_Init(void)
 void ConfigureDMA()
 {
     __DMA1_CLK_ENABLE();
-    g_DmaHandle1.Instance=DMA1_Channel1;
-    g_DmaHandle1.Init.Direction=DMA_PERIPH_TO_MEMORY;
-    g_DmaHandle1.Init.PeriphInc=DMA_PINC_DISABLE;
-    g_DmaHandle1.Init.MemInc=DMA_MINC_ENABLE;
-    g_DmaHandle1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    g_DmaHandle1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    g_DmaHandle1.Init.Mode = DMA_CIRCULAR;
+    g_DmaHandle.Instance=DMA1_Channel1;
+    g_DmaHandle.Init.Direction=DMA_PERIPH_TO_MEMORY;
+    g_DmaHandle.Init.PeriphInc=DMA_PINC_DISABLE;
+    g_DmaHandle.Init.MemInc=DMA_MINC_ENABLE;
+    g_DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    g_DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    g_DmaHandle.Init.Mode = DMA_CIRCULAR;
 
-    HAL_DMA_Init(&g_DmaHandle1);
+    HAL_DMA_Init(&g_DmaHandle);
 
-    __HAL_LINKDMA(&hadc1, DMA_Handle, g_DmaHandle1);
+    __HAL_LINKDMA(&hadc1, DMA_Handle, g_DmaHandle);
 
     HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-    g_DmaHandle2.Instance=DMA1_Channel2;
-	g_DmaHandle2.Init.Direction=DMA_PERIPH_TO_MEMORY;
-	g_DmaHandle2.Init.PeriphInc=DMA_PINC_DISABLE;
-	g_DmaHandle2.Init.MemInc=DMA_MINC_ENABLE;
-	g_DmaHandle2.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	g_DmaHandle2.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-	g_DmaHandle2.Init.Mode = DMA_CIRCULAR;
-
-	HAL_DMA_Init(&g_DmaHandle2);
-
-	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle2);
-
-	HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
-
-	g_DmaHandle3.Instance=DMA1_Channel3;
-	g_DmaHandle3.Init.Direction=DMA_MEMORY_TO_PERIPH;
-	g_DmaHandle3.Init.PeriphInc=DMA_PINC_DISABLE;
-	g_DmaHandle3.Init.MemInc=DMA_MINC_ENABLE;
-	g_DmaHandle3.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	g_DmaHandle3.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-	g_DmaHandle3.Init.Mode = DMA_CIRCULAR;
-
-
-	HAL_DMA_Init(&g_DmaHandle3);
-
-	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle3);
-
-	HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-
-	g_DmaHandle4.Instance=DMA1_Channel4;
-	g_DmaHandle4.Init.Direction=DMA_MEMORY_TO_PERIPH;
-	g_DmaHandle4.Init.PeriphInc=DMA_PINC_DISABLE;
-	g_DmaHandle4.Init.MemInc=DMA_MINC_ENABLE;
-	g_DmaHandle4.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	g_DmaHandle4.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-	g_DmaHandle4.Init.Mode = DMA_CIRCULAR;
-
-	HAL_DMA_Init(&g_DmaHandle4);
-
-	__HAL_LINKDMA(&hadc2, DMA_Handle, g_DmaHandle4);
-
-	HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 }
 
-/* TIM6 init function */
-//void MX_TIM6_Init(void)
-//{
-//
-//  TIM_MasterConfigTypeDef sMasterConfig;
-//
-//  htim6.Instance = TIM6;
-//  htim6.Init.Prescaler = 0;
-//  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-//  htim6.Init.Period = 32768;
-//  HAL_TIM_Base_Init(&htim6);
-//
-//  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-//  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-//  HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
-//
-//}
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
