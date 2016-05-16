@@ -41,9 +41,9 @@
 #include "arm_math.h"
 #include "stdbool.h"
 
-#define ADC1_CHANNELS_NUMBER 6
-#define ADC2_CHANNELS_NUMBER 2
-#define ADC_BUFFER_LENGTH 3
+#define ADC1_CHANNELS_NUMBER 3
+#define ADC2_CHANNELS_NUMBER 3
+#define ADC_BUFFER_LENGTH 60
 
 uint32_t value=0;
 uint8_t	adc_1_value_cnt;
@@ -51,18 +51,22 @@ uint8_t adc_2_value_cnt;
 uint8_t	adc_1_cnt;
 uint8_t adc_2_cnt;
 int licznik=0;
+int ind=0;
 
 extern ADCValue;
 
 extern unsigned char test;
 extern float32_t AN1_Pot_Value;
 extern float32_t AN2_Pot_Value;
+extern volatile uint32_t DACValues1[2];
+extern volatile uint32_t DACValues2[2];
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern DMA_HandleTypeDef g_DmaHandle1;
 extern DMA_HandleTypeDef g_DmaHandle2;
 extern DMA_HandleTypeDef g_DmaHandle3;
 extern DMA_HandleTypeDef g_DmaHandle4;
+extern TIM_HandleTypeDef 	htim6;
 
 extern uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
 extern uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
@@ -73,44 +77,62 @@ extern volatile uint8_t adc_1_conv_in_progress;
 extern volatile uint8_t adc_2_conv_in_progress;
 volatile uint8_t  adc_1_conv_in_progress;
 volatile uint8_t  adc_2_conv_in_progress;
-extern volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
-extern volatile uint16_t adc_2_value[ADC2_CHANNELS_NUMBER];
+extern volatile uint32_t adc_1_value[ADC1_CHANNELS_NUMBER];
+extern volatile uint32_t adc_2_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
 
 
-extern HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
+extern void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		{
 //		ADCValue=accumulate(g_ADCBuffer,g_ADCBuffer + ADC_BUFFER_LENGTH,0)/ADC_BUFFER_LENGTH;
+	int i=0;
+	int j=0;
+	ind++;
+	if(ind==2)
+		ind=0;
+	for(i=0;i<ADC_BUFFER_LENGTH;i+=ADC1_CHANNELS_NUMBER)
+	{
+		adc_1_value[0]+=g_ADCBuffer1[i];
+		adc_1_value[1]+=g_ADCBuffer1[i+1];
+		adc_1_value[2]+=g_ADCBuffer1[i+2];
 
-		adc_1_value[0]=g_ADCBuffer1[0];
-		adc_1_value[1]=g_ADCBuffer1[1];
-		adc_1_value[2]=g_ADCBuffer1[2];
+		adc_1_value[3]+=g_ADCBuffer2[i];
+		adc_1_value[4]+=g_ADCBuffer2[i+1];
+		adc_1_value[5]+=g_ADCBuffer2[i+2];
+	}
+		adc_2_value[0]=adc_1_value[0]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
+		adc_2_value[1]=adc_1_value[1]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
+		adc_2_value[2]=adc_1_value[2]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
 
-		adc_1_value[3]=g_ADCBuffer2[0];
-		adc_1_value[4]=g_ADCBuffer2[1];
-		adc_1_value[5]=g_ADCBuffer2[2];
+		adc_2_value[3]=adc_1_value[3]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
+		adc_2_value[4]=adc_1_value[4]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
+		adc_2_value[5]=adc_1_value[5]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
+
+		DACValues1[ind]=adc_2_value[0];
+		DACValues2[ind]=adc_2_value[1];
+
+		adc_1_value[0]=0;
+		adc_1_value[1]=0;
+		adc_1_value[2]=0;
+
+		adc_1_value[3]=0;
+		adc_1_value[4]=0;
+		adc_1_value[5]=0;
 
 //		if(adc_1_cnt==2)
 //			adc_1_cnt=0;
 
-		AN1_Pot_Value=adc_1_value[0]*0.8056640625;
-		AN2_Pot_Value=adc_1_value[1]*0.8056640625;
+		AN1_Pot_Value=adc_1_value[0]*0.08056640625;
+		AN2_Pot_Value=adc_1_value[1]*0.08056640625;
 		}
-extern HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
+extern void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
+		{
+//while(1);
+		}
+extern void HAL_DAC_ConvCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
 		{
 
 		}
-extern HAL_DAC_ConvCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
-		{
 
-		}
-extern HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
-		{
-
-		}
-extern HAL_DAC_ConvHalfCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
-		{
-
-		}
 
 
 
@@ -156,31 +178,9 @@ void SysTick_Handler(void)
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
   HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
-//  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
-  //
-//  if(!adc_1_conv_in_progress)
-//  {
-//	  adc_1_conv_in_progress = 1;
-//	  HAL_ADC_Start_IT(&hadc1);
-//  }
-//
-//  if(!adc_2_conv_in_progress)
-//  {
-//	  adc_2_conv_in_progress = 1;
-//	  HAL_ADC_Start_IT(&hadc2);
-//  }
 
-//  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
-//  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN))
-//  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN);
-//  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN))
-//  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN);
-//  if(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN))
-//  HAL_GPIO_TogglePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN);
 
-  /* USER CODE BEGIN SysTick_IRQn 1 */
 
-  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -234,6 +234,10 @@ void DMA1_Channel3_IRQHandler()
 void DMA1_Channel4_IRQHandler()
 {
 	HAL_DMA_IRQHandler(&g_DmaHandle4);
+}
+void TIM6_DAC1_IRQHandler()
+{
+	HAL_TIM_IRQHandler(&htim6);
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

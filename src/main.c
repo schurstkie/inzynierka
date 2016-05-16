@@ -39,14 +39,23 @@
 #include "gpio_config.h"
 #include "stdbool.h"
 #include "KS0108.h"
-#include "justa2.h"
+//#include "justa2.h"
 #include "arm_math.h"
 #include "mode_config.h"
+#include "calc.h"
 
 
-#define ADC_BUFFER_LENGTH (6)
-#define ADC1_CHANNELS_NUMBER 6
-#define ADC2_CHANNELS_NUMBER 2
+
+
+#define ADC1_CHANNELS_NUMBER 3
+#define ADC2_CHANNELS_NUMBER 3
+#define ADC_BUFFER_LENGTH 60
+
+#define volt_input_multiplier 8
+#define current_input_multiplier 8
+
+#define volt_output_multiplier 8
+#define current_output_multiplier 8
 
 /* USER CODE BEGIN Includes */
 
@@ -56,7 +65,7 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
-DAC_HandleTypeDef hdac1;
+DAC_HandleTypeDef 	hdac1;
 DMA_HandleTypeDef  	g_DmaHandle1;
 DMA_HandleTypeDef 	g_DmaHandle2;
 DMA_HandleTypeDef  	g_DmaHandle3;
@@ -68,10 +77,10 @@ TIM_HandleTypeDef 	htim6;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-uint32_t Analog_current_input1=0;
-uint32_t Analog_voltage_input1=0;
-uint32_t Analog_current_input2=0;
-uint32_t Analog_voltage_input2=0;
+uint16_t Analog_current_input1=0;
+uint16_t Analog_voltage_input1=0;
+uint16_t Analog_current_input2=0;
+uint16_t Analog_voltage_input2=0;
 
 float32_t AN1_Pot_Value;
 float32_t AN2_Pot_Value;
@@ -79,13 +88,20 @@ float32_t AN2_Pot_Value;
 uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
 uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
 
-uint32_t ADCValue;
-uint32_t DACValues1[10];
-uint32_t DACValues2[10];
+uint16_t ADCValue;
+volatile uint32_t DACValues1[2];
+volatile uint32_t DACValues2[2];
+
+float volt1[5];
+float curr1[5];
+float volt2[5];
+float curr2[5];
+//float pot1[10];
+//float pot2[10];
 
 volatile bool COUNTER_FLAG=false;
-volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
-volatile uint16_t adc_1_value[ADC1_CHANNELS_NUMBER];
+volatile uint32_t adc_1_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
+volatile uint32_t adc_2_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
 char temp[16];
 //int MeasurementNumber;
 
@@ -103,7 +119,7 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_DAC1_Init(void);
 static void ConfigureDMA(void);
-//static void MX_TIM6_Init(void);
+static void MX_TIM6_Init(void);
 
 
 
@@ -153,61 +169,45 @@ int main(void)
 
 //  GLCD_Line(X1,X2,Y1,Y2);
 
-
-//  HAL_ADC_Start_IT(&hadc1);
   HAL_TIM_Base_Start(&htim6);
   HAL_ADC_Start_DMA(&hadc1, g_ADCBuffer1, ADC_BUFFER_LENGTH);
   HAL_ADC_Start_DMA(&hadc2, g_ADCBuffer2, ADC_BUFFER_LENGTH);
 
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);
-  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)DACValues1,32,DAC_ALIGN_12B_R);
-
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
-  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2,(uint32_t*)DACValues2,32,DAC_ALIGN_12B_R);
+
+  //DAC1->DHR12R1 = 0b011111111111;
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)DACValues1,2,DAC_ALIGN_12B_R);
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2,(uint32_t*)DACValues2,2,DAC_ALIGN_12B_R);
 
   int licznik=0;
+//  setCurrentInputMode(1);
+//  setCurrentInputMode(2);
+  setCurrentOutputMode(1);
+  setCurrentOutputMode(2);
+
+  set_object_transmittance(1,39.107,0,3.893);
+
   while (1)
   {
   if(AUTO_MANUAL_MODE==0)
   {
 
 	  SysTickDelay(10);
-	  for(licznik=0;licznik<ADC1_CHANNELS_NUMBER;licznik++)
+	  for(licznik=0;licznik<(ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER);licznik++)
 	  {
 		  GLCD_GoToReversed(0,licznik);
-		  itoa((int)adc_1_value[licznik],temp,10);
+		  itoa((int)adc_2_value[licznik],temp,10);
 		  GLCD_ClearPage(licznik);
 		  GLCD_GoToReversed(0,licznik);
 		  GLCD_WriteStringNeg(temp);
 	  }
-	  /*
-	  GLCD_GoToReversed(0,i);
-	  itoa((int)AN2_Pot_Value,temp,10);
-	  GLCD_ClearPage(5);
-	  GLCD_GoToReversed(0,5);
-	  GLCD_WriteStringNeg(temp);
-	    */
-
-//	  if(HAL_ADC_PollForConversion(&hadc1,1000000)==HAL_OK)
-//	  {
-//		  ADCValue=HAL_ADC_GetValue(&hadc1);
-//		  AN1_Pot_Value=ADCValue*0.0008056640625;
-//		  MeasurementNumber++;
-//	  }
 
 
 
 
-	  //
-	  /*digital in to out*/
-//	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_1_PORT,DIGITAL_INPUT_1_PIN));
-//	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_2_PORT,DIGITAL_INPUT_2_PIN));
-//	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_3_PORT,DIGITAL_INPUT_3_PIN));
-//	  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,HAL_GPIO_ReadPin(DIGITAL_INPUT_4_PORT,DIGITAL_INPUT_4_PIN));
   }
   }
-  /* USER CODE END 3 */
-
 }
 
 /** System Clock Configuration
@@ -751,19 +751,21 @@ void ConfigureDMA()
 /* TIM6 init function */
 void MX_TIM6_Init(void)
 {
-
+	__TIM6_CLK_ENABLE();
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 0;
+  htim6.Init.Prescaler = 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65535;
+  htim6.Init.Period = 65000;
   HAL_TIM_Base_Init(&htim6);
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+//  TIM6->CR2=0x02;
   HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
-  __TIM6_CLK_ENABLE();
+//  TIM6->CR2=0x20;
+
 
 }
 /* USER CODE BEGIN 4 */

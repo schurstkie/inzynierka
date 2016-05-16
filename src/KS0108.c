@@ -7,7 +7,7 @@
 #include "font5x8.h"
 #include "graphic.h"
 #include "stdint.h"
-#include "justa.h"
+//#include "justa.h"
 
 //-------------------------------------------------------------------------------------------------
 extern void GLCD_InitializePorts(void);
