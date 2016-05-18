@@ -15,5 +15,7 @@ void setCurrentOutputMode(uint8_t channel);
 void setCurrentPullUpMode(uint8_t channel);
 void resetCurrentPullUpMode(uint8_t channel);
 void setDefaultConfig(void);
+void getOutputModeState(uint8_t channel);
+void getInputModeState(uint8_t channel);
 
 #endif /* MODE_CONFIG_H_ */

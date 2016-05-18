@@ -97,6 +97,17 @@ void setDefaultConfig()
 	setVoltageInputMode(2);
 	setVoltageOutputMode(1);
 	setVoltageOutputMode(2);
+	HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
 
+}
+void getOutputModeState(uint8_t channel)
+{
+
+}
+void getInputModeState(uint8_t channel)
+{
 
 }

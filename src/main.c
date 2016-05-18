@@ -40,9 +40,12 @@
 #include "stdbool.h"
 #include "KS0108.h"
 //#include "justa2.h"
+#include "iair.h"
 #include "arm_math.h"
 #include "mode_config.h"
 #include "calc.h"
+#include "fifo.h"
+#include "menu.h"
 
 
 
@@ -102,13 +105,14 @@ float curr2[5];
 volatile bool COUNTER_FLAG=false;
 volatile uint32_t adc_1_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
 volatile uint32_t adc_2_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
+volatile uint32_t adc_2_value_last[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
 char temp[16];
 //int MeasurementNumber;
 
 
 //unsigned char test=0;
 
-bool AUTO_MANUAL_MODE=false;
+bool AUTO_MODE=false;
 
 /* USER CODE END PV */
 
@@ -121,7 +125,7 @@ static void MX_DAC1_Init(void);
 static void ConfigureDMA(void);
 static void MX_TIM6_Init(void);
 
-
+//fifo_t
 
 
 
@@ -139,6 +143,9 @@ int main(void)
 {
   HAL_Init();
   SystemClock_Config();
+  set_object_transmittance(1,39.107,0,3.893);
+  set_disruption1_transmittance(1,39.107,0,0);
+  set_disruption2_transmittance(-1,52.1,0,0);
   MX_GPIO_Init();
   ConfigureDMA();
   MX_ADC1_Init();
@@ -148,19 +155,11 @@ int main(void)
   setDefaultConfig();
 
 
-
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,GPIO_PIN_SET);
-
-
-
-
   GLCD_Initialize();
   GLCD_Delay();
   GLCD_ClearScreen();
   GLCD_Delay();
+
 //  GLCD_GoToReversed(0,0);
   //GLCD_GoTo(63,63);
 //  GLCD_Bitmap_Reversed(obrazek2,0,0,128,64);
@@ -177,31 +176,53 @@ int main(void)
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
 
   //DAC1->DHR12R1 = 0b011111111111;
-  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)DACValues1,2,DAC_ALIGN_12B_R);
-  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2,(uint32_t*)DACValues2,2,DAC_ALIGN_12B_R);
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1,(uint32_t*)DACValues1,1,DAC_ALIGN_12B_R);
+  HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2,(uint32_t*)DACValues2,1,DAC_ALIGN_12B_R);
 
   int licznik=0;
 //  setCurrentInputMode(1);
 //  setCurrentInputMode(2);
-  setCurrentOutputMode(1);
-  setCurrentOutputMode(2);
+//  setCurrentOutputMode(1);
+//  setCurrentOutputMode(2);
+//  setCurrentPullUpMode(1);
+//  setCurrentPullUpMode(2);
 
-  set_object_transmittance(1,39.107,0,3.893);
+
+  GLCD_Bitmap_Reversed(logo,0,0,128,64);
+//  GLCD_Bitmap_Reversed(ewa,0,0,128,64);
+  SysTickDelay(200);
+  GLCD_ClearScreen();
+
+
 
   while (1)
   {
-  if(AUTO_MANUAL_MODE==0)
+	  SysTickDelay(50);
+	  GLCD_ClearScreen();
+	  show_menu();
+
+  if(AUTO_MODE==0)
   {
 
-	  SysTickDelay(10);
-	  for(licznik=0;licznik<(ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER);licznik++)
-	  {
-		  GLCD_GoToReversed(0,licznik);
-		  itoa((int)adc_2_value[licznik],temp,10);
-		  GLCD_ClearPage(licznik);
-		  GLCD_GoToReversed(0,licznik);
-		  GLCD_WriteStringNeg(temp);
-	  }
+//	  SysTickDelay(50);
+//	  for(licznik=0;licznik<(ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER);licznik++)
+//	  {
+
+//		  GLCD_ClearScreen();
+
+//		  GLCD_GoToReversed(0,licznik);
+//		  itoa((int)adc_2_value[licznik],temp,10);
+//		  GLCD_ClearPage(licznik);
+//		  GLCD_GoToReversed(0,licznik);//		  GLCD_WriteStringNeg(temp);
+////		  GLCD_GoToReversed(0,licznik);
+//		  GLCD_Delay();
+//		  GLCD_GoToReversed(0,6);
+//		  itoa((int)DACValues1[0],temp,10);
+//		  GLCD_ClearPage(6);
+//		  GLCD_GoToReversed(0,6);
+//		  GLCD_WriteStringNeg(temp);
+////		  GLCD_GoToReversed(0,licznik);
+//	  }
 
 
 
@@ -437,14 +458,12 @@ void MX_GPIO_Init(void)
 
     GPIO_InitStructure.Pin = DIGITAL_INPUT_1_PIN;
     GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-//    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
     GPIO_InitStructure.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(DIGITAL_INPUT_1_PORT, &GPIO_InitStructure);
 
     GPIO_InitStructure.Pin = DIGITAL_INPUT_2_PIN;
     GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-//    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
     GPIO_InitStructure.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(DIGITAL_INPUT_2_PORT, &GPIO_InitStructure);
@@ -452,14 +471,12 @@ void MX_GPIO_Init(void)
 
     GPIO_InitStructure.Pin = DIGITAL_INPUT_3_PIN;
     GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-//    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
     GPIO_InitStructure.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(DIGITAL_INPUT_3_PORT, &GPIO_InitStructure);
 
     GPIO_InitStructure.Pin = DIGITAL_INPUT_4_PIN;
     GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-//    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_LOW;
     GPIO_InitStructure.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(DIGITAL_INPUT_4_PORT, &GPIO_InitStructure);
@@ -755,9 +772,9 @@ void MX_TIM6_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 1;
+  htim6.Init.Prescaler = 0;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65000;
+  htim6.Init.Period = 65530;
   HAL_TIM_Base_Init(&htim6);
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;

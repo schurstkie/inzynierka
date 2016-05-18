@@ -52,6 +52,10 @@ uint8_t	adc_1_cnt;
 uint8_t adc_2_cnt;
 int licznik=0;
 int ind=0;
+bool last_state_sw1;
+bool last_state_sw2;
+bool last_state_sw3;
+bool last_state_sw4;
 
 extern ADCValue;
 
@@ -68,6 +72,7 @@ extern DMA_HandleTypeDef g_DmaHandle3;
 extern DMA_HandleTypeDef g_DmaHandle4;
 extern TIM_HandleTypeDef 	htim6;
 
+
 extern uint32_t g_ADCBuffer1[ADC_BUFFER_LENGTH];
 extern uint32_t g_ADCBuffer2[ADC_BUFFER_LENGTH];
 
@@ -77,9 +82,10 @@ extern volatile uint8_t adc_1_conv_in_progress;
 extern volatile uint8_t adc_2_conv_in_progress;
 volatile uint8_t  adc_1_conv_in_progress;
 volatile uint8_t  adc_2_conv_in_progress;
-extern volatile uint32_t adc_1_value[ADC1_CHANNELS_NUMBER];
+extern volatile uint32_t adc_1_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
 extern volatile uint32_t adc_2_value[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
-
+extern volatile uint32_t adc_2_value_last[ADC1_CHANNELS_NUMBER+ADC2_CHANNELS_NUMBER];
+extern bool AUTO_MODE;
 
 extern void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		{
@@ -89,6 +95,13 @@ extern void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 	ind++;
 	if(ind==2)
 		ind=0;
+	adc_2_value_last[0]=adc_2_value[0];
+	adc_2_value_last[1]=adc_2_value[1];
+	adc_2_value_last[2]=adc_2_value[2];
+
+	adc_2_value_last[3]=adc_2_value[3];
+	adc_2_value_last[4]=adc_2_value[4];
+	adc_2_value_last[5]=adc_2_value[5];
 	for(i=0;i<ADC_BUFFER_LENGTH;i+=ADC1_CHANNELS_NUMBER)
 	{
 		adc_1_value[0]+=g_ADCBuffer1[i];
@@ -107,8 +120,9 @@ extern void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 		adc_2_value[4]=adc_1_value[4]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
 		adc_2_value[5]=adc_1_value[5]/(ADC_BUFFER_LENGTH/ADC1_CHANNELS_NUMBER);
 
-		DACValues1[ind]=adc_2_value[0];
-		DACValues2[ind]=adc_2_value[1];
+		//DACValues1[0]=adc_2_value[5];
+
+//		HAL_GPIO_TogglePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN);
 
 		adc_1_value[0]=0;
 		adc_1_value[1]=0;
@@ -127,10 +141,18 @@ extern void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 extern void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* DacHandle)
 		{
 //while(1);
-		}
+//	if()
+	if(AUTO_MODE)
+	{
+	calc_object_transmittance_value(adc_2_value[5],adc_2_value_last[5],DACValues1[5]);
+	calc_disruption2_transmittance_value();
+	DACValues1[0]=calc_sum();
+//	HAL_GPIO_TogglePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN);
+	}
+	}
 extern void HAL_DAC_ConvCpltCallbackCh2(DAC_HandleTypeDef* DacHandle)
 		{
-
+	DACValues2[0]=calc_sum();
 		}
 
 
@@ -174,10 +196,28 @@ void SysTick_Handler(void)
   HAL_SYSTICK_IRQHandler();
   if((COUNTER_FLAG)&(ticks!=0))
   ticks--;
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_1_PORT,DIGITAL_OUTPUT_SWITCH_1_PIN)));
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
-  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
+
+  if(last_state_sw1==true & !HAL_GPIO_ReadPin(SWITCH_MENU_UP_PORT,SWITCH_MENU_UP_PIN))
+	  incr_menu_position();
+  if(last_state_sw2==true & !HAL_GPIO_ReadPin(SWITCH_MENU_DOWN_PORT,SWITCH_MENU_DOWN_PIN))
+  	  decr_menu_position();
+  if(last_state_sw3==true & !HAL_GPIO_ReadPin(SWITCH_MENU_LEFT_PORT,SWITCH_MENU_LEFT_PIN))
+	  back_menu();
+  if(last_state_sw4==true & !HAL_GPIO_ReadPin(SWITCH_MENU_RIGHT_PORT,SWITCH_MENU_RIGHT_PIN))
+	  select_menu();
+  last_state_sw1=HAL_GPIO_ReadPin(SWITCH_MENU_UP_PORT,SWITCH_MENU_UP_PIN);
+  last_state_sw2=HAL_GPIO_ReadPin(SWITCH_MENU_DOWN_PORT,SWITCH_MENU_DOWN_PIN);
+  last_state_sw3=HAL_GPIO_ReadPin(SWITCH_MENU_LEFT_PORT,SWITCH_MENU_LEFT_PIN);
+  last_state_sw4=HAL_GPIO_ReadPin(SWITCH_MENU_RIGHT_PORT,SWITCH_MENU_RIGHT_PIN);
+
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_1_PORT,DIGITAL_OUTPUT_SWITCH_1_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_2_PORT,DIGITAL_OUTPUT_SWITCH_2_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_3_PORT,DIGITAL_OUTPUT_SWITCH_3_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_OUTPUT_SWITCH_4_PORT,DIGITAL_OUTPUT_SWITCH_4_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_1_PORT,DIGITAL_OUTPUT_1_PIN,!(HAL_GPIO_ReadPin(DIGITAL_INPUT_1_PORT,DIGITAL_INPUT_1_PIN)));
+//  HAL_GPIO_WritePin(DIGITAL_OUTPUT_2_PORT,DIGITAL_OUTPUT_2_PIN,!(HAL_GPIO_ReadPin(DIGITAL_INPUT_2_PORT,DIGITAL_INPUT_2_PIN)));
+//	HAL_GPIO_WritePin(DIGITAL_OUTPUT_3_PORT,DIGITAL_OUTPUT_3_PIN,!(HAL_GPIO_ReadPin(DIGITAL_INPUT_3_PORT,DIGITAL_INPUT_3_PIN)));
+//HAL_GPIO_WritePin(DIGITAL_OUTPUT_4_PORT,DIGITAL_OUTPUT_4_PIN,!(HAL_GPIO_ReadPin(DIGITAL_INPUT_4_PORT,DIGITAL_INPUT_4_PIN)));
 
 
 

@@ -13,7 +13,9 @@ void calc_disruption1_transmittance_value(uint32_t *in, uint32_t *out);
 void calc_disruption2_transmittance_value(uint32_t *in, uint32_t *out);
 void set_disruption1_transmittance(uint32_t gain,uint32_t t1,uint32_t t2,uint32_t delay);
 void set_disruption2_transmittance(uint32_t gain,uint32_t t1,uint32_t t2,uint32_t delay);
-void set_object_transmittance(uint32_t gain,uint32_t t1,uint32_t t2,uint32_t delay);
+void set_object_transmittance(float gain,float t1,float t2,float delay);
 void calc_all_transmittance_value(void);
+uint16_t calc_sum();
+
 
 #endif /* CALC_H_ */
